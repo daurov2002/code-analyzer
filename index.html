@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KodTahlil — Toza Kod Tekshiruv Tizimi</title>
+
+<!-- CodeMirror -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+
+<style>
+/* ────────── TOKENS ────────── */
+:root {
+  --bg:        #0b0f1a;
+  --surface:   #111827;
+  --card:      #1a2235;
+  --border:    #253047;
+  --accent:    #3b82f6;
+  --accent2:   #60a5fa;
+  --green:     #22c55e;
+  --red:       #ef4444;
+  --yellow:    #f59e0b;
+  --text:      #e2e8f0;
+  --muted:     #64748b;
+  --radius:    12px;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-ui:   'Plus Jakarta Sans', 'DM Sans', sans-serif;
+}
+
+/* ────────── RESET ────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ────────── GOOGLE FONTS ────────── */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* ────────── HEADER ────────── */
+header {
+  border-bottom: 1px solid var(--border);
+  background: rgba(17,24,39,0.9);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 0 2rem;
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+}
+
+.logo-sub {
+  font-size: 0.65rem;
+  color: var(--muted);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: block;
+  line-height: 1;
+}
+
+.header-badge {
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.3);
+  color: var(--accent2);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* ────────── LAYOUT ────────── */
+.app {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  min-height: calc(100vh - 60px);
+}
+
+@media (max-width: 960px) {
+  .app { grid-template-columns: 1fr; padding: 1rem; }
+}
+
+/* ────────── PANEL ────────── */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  background: rgba(255,255,255,0.02);
+}
+
+.panel-header .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.panel-body {
+  padding: 1.25rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+}
+
+/* ────────── FORM CONTROLS ────────── */
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.4rem;
+}
+
+select, textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  padding: 0.6rem 0.9rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none;
+  outline: none;
+}
+
+select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 2rem; }
+
+select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+
+textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+/* ────────── TASK TABS ────────── */
+.task-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  background: var(--surface);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.task-tab {
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.5rem 0.25rem;
+  text-align: center;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.task-tab .tab-icon { font-size: 1rem; }
+.task-tab .tab-label { font-size: 0.7rem; letter-spacing: 0.04em; }
+
+.task-tab:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+.task-tab.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.4);
+}
+
+/* ────────── CODE EDITOR ────────── */
+.editor-wrap {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  flex: 1;
+  min-height: 320px;
+}
+
+.editor-wrap .CodeMirror {
+  height: 100%;
+  min-height: 320px;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.7;
+  background: #0d1117;
+}
+
+.editor-wrap .CodeMirror-scroll { min-height: 320px; }
+.editor-wrap .CodeMirror-gutters { background: #0d1117; border-right: 1px solid #1e2a3a; }
+
+/* ────────── ANALYZE BUTTON ────────── */
+.btn-analyze {
+  width: 100%;
+  padding: 0.85rem;
+  background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
+  border: none;
+  border-radius: 9px;
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-analyze::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.btn-analyze:hover::before { opacity: 1; }
+.btn-analyze:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(59,130,246,0.4); }
+.btn-analyze:active { transform: translateY(0); }
+.btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ────────── LOADING ────────── */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ────────── EMPTY STATE ────────── */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--muted);
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+.empty-state h3 { font-size: 1rem; font-weight: 600; color: var(--muted); }
+.empty-state p { font-size: 0.82rem; line-height: 1.6; max-width: 260px; }
+
+/* ────────── SCORE RING ────────── */
+.score-block {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+
+.score-ring {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+}
+
+.score-ring svg { transform: rotate(-90deg); }
+
+.score-ring circle.bg {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 6;
+}
+
+.score-ring circle.fg {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s ease, stroke 0.5s;
+}
+
+.score-num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
+
+.score-info h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.25rem; }
+.score-info p { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+
+/* ────────── RESULT SECTIONS ────────── */
+.result-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.result-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  font-size: 0.82rem;
+  gap: 8px;
+  transition: background 0.15s;
+}
+
+.result-section-header:hover { background: rgba(255,255,255,0.03); }
+
+.result-section-header .rs-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rs-icon { font-size: 0.95rem; }
+
+.rs-count {
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 1px 7px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.rs-count.red { background: rgba(239,68,68,0.2); color: var(--red); }
+.rs-count.yellow { background: rgba(245,158,11,0.2); color: var(--yellow); }
+.rs-count.green { background: rgba(34,197,94,0.2); color: var(--green); }
+.rs-count.blue { background: rgba(59,130,246,0.2); color: var(--accent2); }
+
+.rs-chevron {
+  color: var(--muted);
+  font-size: 0.7rem;
+  transition: transform 0.2s;
+}
+
+.result-section.open .rs-chevron { transform: rotate(180deg); }
+
+.result-section-body {
+  display: none;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.result-section.open .result-section-body { display: block; }
+
+/* ────────── ISSUE / SUGGESTION LIST ────────── */
+.item-list { display: flex; flex-direction: column; gap: 6px; }
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.item.issue { background: rgba(239,68,68,0.07); border-left: 2px solid var(--red); }
+.item.suggestion { background: rgba(245,158,11,0.07); border-left: 2px solid var(--yellow); }
+
+.item-bullet {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+.item.issue .item-bullet { background: var(--red); color: #fff; }
+.item.suggestion .item-bullet { background: var(--yellow); color: #000; }
+
+/* ────────── EXPLANATION ────────── */
+.explanation-text {
+  font-size: 0.85rem;
+  line-height: 1.75;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+}
+
+/* ────────── CODE BLOCK ────────── */
+.code-block {
+  position: relative;
+  background: #0d1117;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.code-block pre {
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: #a9b1d6;
+  white-space: pre;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover { color: var(--text); border-color: var(--accent); }
+
+/* ────────── LINT BLOCK ────────── */
+.lint-output {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: #94a3b8;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.lint-ok { color: var(--green); font-weight: 600; }
+
+/* ────────── LOADING OVERLAY ────────── */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(11,15,26,0.85);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  z-index: 10;
+  border-radius: var(--radius);
+  backdrop-filter: blur(4px);
+}
+
+.loading-overlay.active { display: flex; }
+
+.loading-spinner-big {
+  width: 48px; height: 48px;
+  border: 3px solid rgba(59,130,246,0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.loading-step {
+  font-size: 0.8rem;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.4s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.loading-step.active { opacity: 1; color: var(--accent2); }
+.loading-step.done { opacity: 0.5; color: var(--green); }
+.loading-step .step-icon { font-size: 0.9rem; }
+
+/* ────────── ERROR TOAST ────────── */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: #1e1e2e;
+  border: 1px solid var(--red);
+  border-radius: 10px;
+  padding: 0.9rem 1.25rem;
+  max-width: 360px;
+  font-size: 0.84rem;
+  color: #fca5a5;
+  z-index: 999;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast-icon { font-size: 1rem; flex-shrink: 0; }
+.toast-close { margin-left: auto; cursor: pointer; color: var(--muted); font-size: 1rem; line-height: 1; flex-shrink: 0; }
+
+/* ────────── SCROLLBAR ────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ────────── RESULT PANEL POSITION ────────── */
+.right-panel { position: relative; }
+
+/* ────────── API URL CONFIG ────────── */
+.api-config {
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+}
+
+.api-config input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--accent2);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  outline: none;
+}
+
+.api-config label { margin: 0; text-transform: none; font-size: 0.75rem; color: var(--muted); flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <span>KodTahlil</span>
+        <span class="logo-sub">Toza Kod Tekshiruv Tizimi</span>
+      </div>
+    </div>
+    <div class="header-badge">BMI · 2024</div>
+  </div>
+</header>
+
+<!-- MAIN APP -->
+<main class="app">
+
+  <!-- ═══ LEFT: INPUT PANEL ═══ -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="dot"></div>
+      Kod Kiritish va Sozlamalar
+    </div>
+    <div class="panel-body">
+
+      <!-- API URL sozlamasi -->
+      <div class="api-config">
+        <label>🔗 Backend:</label>
+        <input type="text" id="apiUrl" value="http://localhost:8000" placeholder="http://localhost:8000"/>
+      </div>
+
+      <!-- Til va vazifa -->
+      <div class="row-2">
+        <div>
+          <label>Dasturlash tili</label>
+          <select id="langSelect">
+            <option value="python">🐍 Python</option>
+            <option value="javascript">🟨 JavaScript</option>
+            <option value="typescript">🔷 TypeScript</option>
+            <option value="java">☕ Java</option>
+            <option value="cpp">⚙️ C++</option>
+            <option value="go">🐹 Go</option>
+            <option value="rust">🦀 Rust</option>
+          </select>
+        </div>
+        <div>
+          <label>Qo'shimcha ko'rsatma</label>
+          <textarea id="instruction" rows="2" placeholder="Masalan: nomlash va SRP tamoyiliga e'tibor bering..."></textarea>
+        </div>
+      </div>
+
+      <!-- Vazifa turlari -->
+      <div>
+        <label>Vazifa turi</label>
+        <div class="task-tabs">
+          <button class="task-tab active" data-task="review">
+            <span class="tab-icon">🔍</span>
+            <span class="tab-label">REVIEW</span>
+          </button>
+          <button class="task-tab" data-task="fix">
+            <span class="tab-icon">🔧</span>
+            <span class="tab-label">FIX</span>
+          </button>
+          <button class="task-tab" data-task="explain">
+            <span class="tab-icon">📖</span>
+            <span class="tab-label">EXPLAIN</span>
+          </button>
+          <button class="task-tab" data-task="refactor">
+            <span class="tab-icon">♻️</span>
+            <span class="tab-label">REFACTOR</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Kod muharriri -->
+      <div>
+        <label>Kod muharriri</label>
+        <div class="editor-wrap">
+          <textarea id="codeEditor"></textarea>
+        </div>
+      </div>
+
+      <!-- Tahlil tugmasi -->
+      <button class="btn-analyze" id="analyzeBtn" onclick="analyzeCode()">
+        <span id="btnIcon">⚡</span>
+        <span id="btnText">Tahlil Qilish</span>
+        <div class="spinner" id="btnSpinner"></div>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT: RESULT PANEL ═══ -->
+  <div class="panel right-panel">
+    <div class="panel-header">
+      <div class="dot" style="background:var(--green)"></div>
+      Tahlil Natijalari
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="loading-spinner-big"></div>
+      <div class="loading-steps">
+        <div class="loading-step" id="step1"><span class="step-icon">📤</span> Kod yuborilmoqda...</div>
+        <div class="loading-step" id="step2"><span class="step-icon">🔬</span> Lint tahlili amalga oshirilmoqda...</div>
+        <div class="loading-step" id="step3"><span class="step-icon">🤖</span> AI kodni tahlil qilmoqda...</div>
+        <div class="loading-step" id="step4"><span class="step-icon">📊</span> Natijalar tayyorlanmoqda...</div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="panel-body" id="emptyState">
+      <div class="empty-state">
+        <div class="empty-icon">🧹</div>
+        <h3>Tahlil natijasi bu yerda ko'rsatiladi</h3>
+        <p>Chap tarafdagi muharrir orqali kod kiriting, dasturlash tili va vazifa turini tanlang, so'ng "Tahlil Qilish" tugmasini bosing.</p>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="panel-body" id="resultsArea" style="display:none">
+
+      <!-- Score -->
+      <div class="score-block" id="scoreBlock">
+        <div class="score-ring">
+          <svg width="72" height="72" viewBox="0 0 72 72">
+            <circle class="bg" cx="36" cy="36" r="30"/>
+            <circle class="fg" id="scoreCircle" cx="36" cy="36" r="30"
+              stroke-dasharray="188.4"
+              stroke-dashoffset="188.4"/>
+          </svg>
+          <div class="score-num" id="scoreNum">—</div>
+        </div>
+        <div class="score-info">
+          <h4 id="scoreLabel">Kod Sifat Balli</h4>
+          <p id="scoreDesc">Tahlil natijalari asosida hisoblangan</p>
+        </div>
+      </div>
+
+      <!-- Issues -->
+      <div class="result-section open" id="issuesSection">
+        <div class="result-section-header" onclick="toggleSection('issuesSection')">
+          <div class="rs-left">
+            <span class="rs-icon">⚠️</span>
+            <span>Aniqlangan muammolar</span>
+            <span class="rs-count red" id="issuesCount">0</span>
+          </div>
+          <span class="rs-chevron">▼</span>
+        </div>
+        <div class="result-section-body">
+          <div class="item-list" id="issuesList"></div>
+        </div>
+      </div>
+
+      <!-- Suggestions -->
+      <div class="result-section open" id="suggestionsSection">
+        <div class="result-section-header" onclick="toggleSection('suggestionsSection')">
+          <div class="rs-left">
+            <span class="rs-icon">💡</span>
+            <span>Tavsiyalar</span>
+            <span class="rs-count yellow" id="suggestionsCount">0</span>
+          </div>
+          <span class="rs-chevron">▼</span>
+        </div>
+        <div class="result-section-body">
+          <div class="item-list" id="suggestionsList"></div>
+        </div>
+      </div>
+
+      <!-- Explanation -->
+      <div class="result-section open" id="explanationSection">
+        <div class="result-section-header" onclick="toggleSection('explanationSection')">
+          <div class="rs-left">
+            <span class="rs-icon">📖</span>
+            <span>Tushuntirish</span>
+          </div>
+          <span class="rs-chevron">▼</span>
+        </div>
+        <div class="result-section-body">
+          <p class="explanation-text" id="explanationText"></p>
+        </div>
+      </div>
+
+      <!-- Fixed Code -->
+      <div class="result-section" id="fixedCodeSection" style="display:none">
+        <div class="result-section-header" onclick="toggleSection('fixedCodeSection')">
+          <div class="rs-left">
+            <span class="rs-icon">✅</span>
+            <span>Tuzatilgan / Qayta tuzilgan kod</span>
+            <span class="rs-count green">YANGI</span>
+          </div>
+          <span class="rs-chevron">▼</span>
+        </div>
+        <div class="result-section-body">
+          <div class="code-block">
+            <pre id="fixedCodePre"></pre>
+            <button class="copy-btn" onclick="copyFixed()">📋 Nusxa</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lint Output -->
+      <div class="result-section" id="lintSection" style="display:none">
+        <div class="result-section-header" onclick="toggleSection('lintSection')">
+          <div class="rs-left">
+            <span class="rs-icon">🔬</span>
+            <span>Lint tahlili (Flake8)</span>
+            <span class="rs-count blue" id="lintBadge">Python</span>
+          </div>
+          <span class="rs-chevron">▼</span>
+        </div>
+        <div class="result-section-body">
+          <pre class="lint-output" id="lintText"></pre>
+        </div>
+      </div>
+
+    </div><!-- /resultsArea -->
+  </div><!-- /right panel -->
+
+</main>
+
+<!-- ERROR TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon">❌</span>
+  <span id="toastMsg">Xato yuz berdi</span>
+  <span class="toast-close" onclick="hideToast()">✕</span>
+</div>
+
+<script>
+// ────────────────────────────────────────────
+// CodeMirror initialization
+// ────────────────────────────────────────────
+
+const editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
+  mode: 'python',
+  theme: 'dracula',
+  lineNumbers: true,
+  indentUnit: 4,
+  tabSize: 4,
+  indentWithTabs: false,
+  lineWrapping: false,
+  autofocus: true,
+  matchBrackets: true,
+  autoCloseBrackets: true,
+  styleActiveLine: true,
+  extraKeys: { "Tab": cm => cm.replaceSelection("    ") }
+});
+
+// Starter namuna kod
+editor.setValue(`# Namuna: toza kod tamoyillari buzilgan Python kodi
+# Quyidagi kodni "Review" yoki "Refactor" bilan tekshiring
+
+def f(a,b,c):
+    x=a+b
+    y=x*c
+    z=y-a
+    if z>0:
+        return True
+    else:
+        return False
+
+def calc(lst):
+    t=0
+    for i in lst:
+        t=t+i
+    avg=t/len(lst)
+    return avg
+
+class mgr:
+    def __init__(self):
+        self.data=[]
+    
+    def additem(self,n,v,p):
+        import re
+        if re.match(r'[a-z]',n):
+            self.data.append({'name':n,'value':v,'price':p})
+            # send email here
+            print('sent email')
+            return True
+        return False
+    
+    def getall(self):
+        return self.data
+`);
+
+// ────────────────────────────────────────────
+// State
+// ────────────────────────────────────────────
+
+let selectedTask = 'review';
+
+// Task tabs
+document.querySelectorAll('.task-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.task-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedTask = btn.dataset.task;
+  });
+});
+
+// Language → CodeMirror mode map
+const modeMap = {
+  python: 'python', javascript: 'javascript',
+  typescript: 'javascript', java: 'text/x-java',
+  cpp: 'text/x-c++src', go: 'text/x-go', rust: 'text/x-rustsrc'
+};
+
+document.getElementById('langSelect').addEventListener('change', e => {
+  editor.setOption('mode', modeMap[e.target.value] || 'text/plain');
+});
+
+// ────────────────────────────────────────────
+// Loading steps animation
+// ────────────────────────────────────────────
+
+let stepTimers = [];
+
+function startLoadingSteps() {
+  const steps = ['step1','step2','step3','step4'];
+  steps.forEach(s => {
+    document.getElementById(s).className = 'loading-step';
+  });
+  steps.forEach((s, i) => {
+    const t = setTimeout(() => {
+      if (i > 0) document.getElementById(steps[i-1]).className = 'loading-step done';
+      document.getElementById(s).className = 'loading-step active';
+    }, i * 900);
+    stepTimers.push(t);
+  });
+}
+
+function clearLoadingSteps() {
+  stepTimers.forEach(t => clearTimeout(t));
+  stepTimers = [];
+}
+
+// ────────────────────────────────────────────
+// Main analyze function
+// ────────────────────────────────────────────
+
+async function analyzeCode() {
+  const code = editor.getValue().trim();
+  const language = document.getElementById('langSelect').value;
+  const instruction = document.getElementById('instruction').value.trim();
+  const apiBase = document.getElementById('apiUrl').value.trim().replace(/\/$/, '');
+
+  if (!code) { showToast('Kod maydoni bo\'sh bo\'lmasligi kerak!'); return; }
+
+  // UI: loading state
+  const btn = document.getElementById('analyzeBtn');
+  const btnSpinner = document.getElementById('btnSpinner');
+  const btnText = document.getElementById('btnText');
+  const btnIcon = document.getElementById('btnIcon');
+
+  btn.disabled = true;
+  btnSpinner.style.display = 'block';
+  btnIcon.style.display = 'none';
+  btnText.textContent = 'Tahlil qilinmoqda...';
+
+  document.getElementById('loadingOverlay').classList.add('active');
+  startLoadingSteps();
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultsArea').style.display = 'none';
+
+  try {
+    const response = await fetch(`${apiBase}/api/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language, task: selectedTask, instruction, code })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ detail: `HTTP ${response.status}` }));
+      throw new Error(err.detail || 'Server xatosi');
+    }
+
+    const data = await response.json();
+    renderResults(data);
+
+  } catch (err) {
+    showToast(err.message || 'Server bilan bog\'lanishda xato. Backend ishlaayotganligini tekshiring.');
+    document.getElementById('emptyState').style.display = '';
+  } finally {
+    btn.disabled = false;
+    btnSpinner.style.display = 'none';
+    btnIcon.style.display = 'block';
+    btnText.textContent = 'Tahlil Qilish';
+    document.getElementById('loadingOverlay').classList.remove('active');
+    clearLoadingSteps();
+  }
+}
+
+// ────────────────────────────────────────────
+// Render results
+// ────────────────────────────────────────────
+
+function renderResults(data) {
+  document.getElementById('resultsArea').style.display = 'flex';
+  document.getElementById('emptyState').style.display = 'none';
+
+  // Score
+  const score = data.score || 0;
+  const circle = document.getElementById('scoreCircle');
+  const circumference = 188.4;
+  const offset = circumference - (circumference * score / 100);
+  circle.style.strokeDashoffset = offset;
+
+  let color, label;
+  if (score >= 80) { color = '#22c55e'; label = 'Yaxshi kod sifati'; }
+  else if (score >= 60) { color = '#f59e0b'; label = 'O\'rtacha kod sifati'; }
+  else if (score >= 40) { color = '#f97316'; label = 'Yaxshilash tavsiya etiladi'; }
+  else { color = '#ef4444'; label = 'Jiddiy yaxshilash kerak'; }
+
+  circle.style.stroke = color;
+  document.getElementById('scoreNum').textContent = score;
+  document.getElementById('scoreNum').style.color = color;
+  document.getElementById('scoreLabel').textContent = `${score}/100 ball`;
+  document.getElementById('scoreDesc').textContent = label;
+
+  // Issues
+  const issues = data.issues || [];
+  document.getElementById('issuesCount').textContent = issues.length;
+  const issuesList = document.getElementById('issuesList');
+  issuesList.innerHTML = '';
+  if (issues.length === 0) {
+    issuesList.innerHTML = '<div class="item issue"><span style="color:var(--green)">✓ Muammolar topilmadi</span></div>';
+  } else {
+    issues.forEach((issue, i) => {
+      issuesList.innerHTML += `<div class="item issue"><div class="item-bullet">${i+1}</div><span>${escapeHtml(issue)}</span></div>`;
+    });
+  }
+
+  // Suggestions
+  const suggestions = data.suggestions || [];
+  document.getElementById('suggestionsCount').textContent = suggestions.length;
+  const suggList = document.getElementById('suggestionsList');
+  suggList.innerHTML = '';
+  if (suggestions.length === 0) {
+    suggList.innerHTML = '<div class="item suggestion"><span>Tavsiyalar mavjud emas</span></div>';
+  } else {
+    suggestions.forEach((s, i) => {
+      suggList.innerHTML += `<div class="item suggestion"><div class="item-bullet">${i+1}</div><span>${escapeHtml(s)}</span></div>`;
+    });
+  }
+
+  // Explanation
+  document.getElementById('explanationText').textContent = data.explanation || '';
+
+  // Fixed code
+  if (data.fixed_code && data.fixed_code.trim()) {
+    document.getElementById('fixedCodeSection').style.display = '';
+    document.getElementById('fixedCodeSection').classList.add('open');
+    document.getElementById('fixedCodePre').textContent = data.fixed_code;
+  } else {
+    document.getElementById('fixedCodeSection').style.display = 'none';
+  }
+
+  // Lint output
+  if (data.lint_output) {
+    document.getElementById('lintSection').style.display = '';
+    const lintEl = document.getElementById('lintText');
+    if (data.lint_output.startsWith('✓')) {
+      lintEl.innerHTML = `<span class="lint-ok">${data.lint_output}</span>`;
+    } else {
+      lintEl.textContent = data.lint_output;
+    }
+  } else {
+    document.getElementById('lintSection').style.display = 'none';
+  }
+
+  // Scroll to results
+  document.getElementById('resultsArea').scrollTop = 0;
+}
+
+// ────────────────────────────────────────────
+// Helpers
+// ────────────────────────────────────────────
+
+function toggleSection(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copyFixed() {
+  const code = document.getElementById('fixedCodePre').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    const orig = btn.textContent;
+    btn.textContent = '✅ Nusxalandi!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
+
+let toastTimer;
+function showToast(msg) {
+  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, 5000);
+}
+function hideToast() {
+  document.getElementById('toast').classList.remove('show');
+}
+
+// Enter shortcut: Ctrl/Cmd + Enter
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') analyzeCode();
+});
+</script>
+</body>
+</html>
