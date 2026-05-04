@@ -10,6 +10,41 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, validator
 import httpx
 
+#
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+import os
+
+app = FastAPI()
+
+# Agar CSS yoki JS fayllaringiz ham asosiy papkada bo'lsa:
+# app.mount("/", StaticFiles(directory=".", html=True), name="static") 
+# Lekin eng xavfsiz va aniq yo'li - index.html ni alohida qaytarish:
+
+@app.get("/")
+async def read_index():
+    # Fayl main.py bilan bir joyda bo'lsa, yo'l shunchaki "index.html" bo'ladi
+    return FileResponse("index.html")
+
+# Sizning qolgan API kodingiz...
+@app.post("/analyze")
+async def analyze_code(data: dict):
+    return {"status": "ok", "message": "Analiz bajarildi"}
+###
+
+
+
+
+
+
+
+
+
+
+
+
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MAX_CODE_LENGTH = 15000
 SUPPORTED_LANGUAGES = ["python", "javascript", "typescript", "java", "cpp", "go", "rust"]
