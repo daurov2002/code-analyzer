@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, validator
 import httpx
 
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MAX_CODE_LENGTH = 15000
 SUPPORTED_LANGUAGES = ["python", "javascript", "typescript", "java", "cpp", "go", "rust"]
 
