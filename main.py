@@ -10,7 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, validator
 import httpx
 
-
+from fastapi.staticfiles import StaticFiles # Statik fayllar uchun
+from fastapi.responses import FileResponse   # HTML faylni yuborish uchun
 
 
 
@@ -73,6 +74,13 @@ class AnalyzeResponse(BaseModel):
     lint_output: str = ""
 
 app = FastAPI(title="Kod Tahlil Tizimi", version="1.0.0")
+# 1. Asosiy sahifaga kirganda index.html ni ochish
+@app.get("/")
+async def read_index():
+    # index.html fayli main.py bilan bitta papkada bo'lishi kerak
+    return FileResponse("index.html")
+
+
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 def run_python_lint(code: str) -> str:
